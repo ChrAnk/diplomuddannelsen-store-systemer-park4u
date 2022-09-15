@@ -7,26 +7,27 @@ namespace Park4U.Controllers
 
     public class Park4UController : ControllerBase
     {
-        public List<List<string>> ParkingData = new()
+        public static List<List<string>> ParkingData = new()
         {
+            new List<string>{"1", "2022-09-11T18:30:21.0283923Z", "30", "AA 10 000", "example1@example.com", "+45 11 11 11 11"},
+            new List<string>{"1", "2022-09-15T20:30:21.0283923Z", "500", "AA 10 000", "example1@example.com", "+45 11 11 11 11"},
             new List<string>{"1", "2022-09-11T18:30:21.0283923Z", "30", "AA 10 000", "example1@example.com", "+45 11 11 11 11"},
             new List<string>{"1", "2022-09-11T20:30:22.0283923Z", "30", "AA 20 000", "example2@example.com", "+45 22 22 22 22"},
             new List<string>{"2", "2022-09-11T20:30:23.0283923Z", "30", "AA 30 000", "example3@example.com", "+45 33 33 33 33"},
-            new List<string>{"2", "2022-09-12T18:30:24.0283923Z", "500", "AA 40 000", "example4@example.com", "+45 44 44 44 44"}
+            new List<string>{"2", "2022-09-12T18:30:24.0283923Z", "1000", "AA 40 000", "example4@example.com", "+45 44 44 44 44"}
         };
 
 
         [HttpPost("RegisterParking")]
 
-        public object RegisterParking(int ParkingSpaceId, int ParkingTimeMinutes, string RegistrationNumber, string EMailAddress, string PhoneNumber)
+        public object RegisterParking(string ParkingSpaceId, string ParkingTimeMinutes, string RegistrationNumber, string EMailAddress, string PhoneNumber)
         {
-            // How to handle prolonging time
-            // => Add time to existing registration?
+            // Limitation: Does not take into account if car and parking spot combination already exists (i.e., not possible to extend parking)
 
             var registration = new List<string> {
-                ParkingSpaceId.ToString(),
+                ParkingSpaceId,
                 DateTime.UtcNow.ToString(),
-                ParkingTimeMinutes.ToString(),
+                ParkingTimeMinutes,
                 RegistrationNumber,
                 EMailAddress,
                 PhoneNumber
@@ -34,7 +35,7 @@ namespace Park4U.Controllers
 
             ParkingData.Add(registration);
 
-            return new RegisterParking
+            return new ParkingRegistration
             {
                 ParkingStart = DateTime.UtcNow,
                 ParkingTimeMinutes = ParkingTimeMinutes,
@@ -50,22 +51,25 @@ namespace Park4U.Controllers
 
         public object CheckMeter(string? ParkingSpaceId, string? RegistrationNumber)
         {
-            // To be done:
-            // * Does not currently handle multiple instances of the same car at the same parking space
-            //   => Maybe use FindAll when getting result, but requires finding the latest only
-            // * Not sure that dates calculate correctly
-
             int RemainingMinutes = 0, PaidMinutes = 0;
 
-            DateTime StartTime, EndTime, CurrentTime = DateTime.UtcNow;
+            DateTime StartTime = Convert.ToDateTime("2000-01-01T00:00:00.0000000Z"), EndTime, CurrentTime = DateTime.UtcNow;
 
-            var result = ParkingData.Find(x => x[0] == ParkingSpaceId && x[3] == RegistrationNumber);
+            bool ParkingValid = false;
 
-            if (result != null)
+            var result = ParkingData.FindAll(x => x[0] == ParkingSpaceId && x[3] == RegistrationNumber);
+
+            if (result.Count != 0)
             {
-                StartTime = Convert.ToDateTime(result[1]);
+                foreach(var item in result)
+                {
+                    if (Convert.ToDateTime(item[1]) > StartTime)
+                    {
+                        StartTime = Convert.ToDateTime(item[1]);
 
-                PaidMinutes = Convert.ToInt32(result[2]);
+                        PaidMinutes = Convert.ToInt32(item[2]);
+                    }
+                }
 
                 EndTime = StartTime.AddMinutes(PaidMinutes);
 
@@ -73,25 +77,27 @@ namespace Park4U.Controllers
 
                 RemainingMinutes = Convert.ToInt32(TimeDifference.TotalMinutes);
 
-                if(RemainingMinutes < 0)
+                if(RemainingMinutes > 0)
+                {
+                    ParkingValid = true;
+                }
+                else
                 {
                     RemainingMinutes = 0;
                 }
             }
             else
             {
-                StartTime = Convert.ToDateTime("2000-01-01T00:00:00.0000000Z");
-                EndTime = Convert.ToDateTime("2000-01-01T00:00:00.0000000Z");
                 RemainingMinutes = 0;
             }
+            
 
-            return new CheckParking
+            return new ParkingVerification
             {
                 ParkingSpaceId = ParkingSpaceId,
                 RegistrationNumber = RegistrationNumber,
-                RemainingMinutes = RemainingMinutes,
-                StartTime = StartTime,
-                EndTime = EndTime
+                ParkingValid = ParkingValid,
+                RemainingMinutes = RemainingMinutes
             };
         }
 
@@ -111,7 +117,7 @@ namespace Park4U.Controllers
 
             var RecordsDeleted = CountPre - CountPost;
 
-            return new DeleteRecords
+            return new ParkingDeletionConfirmation
             {
                 RegistrationNumber = RegistrationNumber,
                 RecordsDeleted = RecordsDeleted

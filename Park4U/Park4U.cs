@@ -1,12 +1,12 @@
 namespace Park4U
 {
-    public class RegisterParking
+    public class ParkingRegistration
     {
-        public int ParkingSpaceId { get; set; }
+        public string? ParkingSpaceId { get; set; }
 
         public DateTime ParkingStart { get; set; }
 
-        public int ParkingTimeMinutes { get; set; }
+        public string? ParkingTimeMinutes { get; set; }
 
         public string? RegistrationNumber { get; set; }
 
@@ -15,20 +15,18 @@ namespace Park4U
         public string? PhoneNumber { get; set; }
     }
 
-    public class CheckParking
+    public class ParkingVerification
     {
         public string? ParkingSpaceId { get; set; }
 
         public string? RegistrationNumber { get; set; }
 
+        public bool ParkingValid { get; set; }
+
         public int RemainingMinutes { get; set; }
-
-        public DateTime StartTime { get; set; }
-
-        public DateTime EndTime { get; set; }
     }
 
-    public class DeleteRecords
+    public class ParkingDeletionConfirmation
     {
         public string? RegistrationNumber { get; set; }
 
