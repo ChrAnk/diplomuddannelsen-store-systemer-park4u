@@ -7,7 +7,7 @@ namespace Park4U.Controllers
 
     public class Park4UController : ControllerBase
     {
-        public static List<List<string>> ParkingData = new()
+        private static readonly List<List<string>> list = new()
         {
             new List<string>{"1", "2022-09-11T18:30:21.0283923Z", "30", "AA 10 000", "example1@example.com", "+45 11 11 11 11"},
             new List<string>{"1", "2022-09-15T20:30:21.0283923Z", "500", "AA 10 000", "example1@example.com", "+45 11 11 11 11"},
@@ -16,6 +16,7 @@ namespace Park4U.Controllers
             new List<string>{"2", "2022-09-11T20:30:23.0283923Z", "30", "AA 30 000", "example3@example.com", "+45 33 33 33 33"},
             new List<string>{"2", "2022-09-12T18:30:24.0283923Z", "1000", "AA 40 000", "example4@example.com", "+45 44 44 44 44"}
         };
+        public static List<List<string>> ParkingData = list;
 
 
         [HttpPost("RegisterParking")]
@@ -81,16 +82,7 @@ namespace Park4U.Controllers
                 {
                     ParkingValid = true;
                 }
-                else
-                {
-                    RemainingMinutes = 0;
-                }
             }
-            else
-            {
-                RemainingMinutes = 0;
-            }
-            
 
             return new ParkingVerification
             {
@@ -108,10 +100,7 @@ namespace Park4U.Controllers
         {
             var CountPre = ParkingData.Count;
 
-            for(int i = 0; i < ParkingData.Count; i++)
-            {
-                ParkingData.RemoveAll(x => x[3] == RegistrationNumber);
-            }
+            ParkingData.RemoveAll(x => x[3] == RegistrationNumber);
 
             var CountPost = ParkingData.Count;
 
